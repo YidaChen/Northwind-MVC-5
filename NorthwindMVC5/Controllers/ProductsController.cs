@@ -7,17 +7,25 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using NorthwindMVC5.Models;
+using NorthwindMVC5.Models.Interface;
+using NorthwindMVC5.Models.Repository;
 
 namespace NorthwindMVC5.Controllers
 {
     public class ProductsController : Controller
     {
+        private IProductRepository productRepository;
         private NorthwindEntities db = new NorthwindEntities();
+
+        public ProductsController()
+        {
+            this.productRepository = new ProductRepository();
+        }
 
         // GET: Products
         public ActionResult Index()
         {
-            var products = db.Products.Include(p => p.Category).Include(p => p.Supplier);
+            var products = this.productRepository.GetAll();
             return View(products.ToList());
         }
 
@@ -28,7 +36,7 @@ namespace NorthwindMVC5.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Product product = db.Products.Find(id);
+            Product product = this.productRepository.Get(id.Value);
             if (product == null)
             {
                 return HttpNotFound();
@@ -53,8 +61,7 @@ namespace NorthwindMVC5.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.Products.Add(product);
-                db.SaveChanges();
+                this.productRepository.Create(product);
                 return RedirectToAction("Index");
             }
 
@@ -70,7 +77,7 @@ namespace NorthwindMVC5.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Product product = db.Products.Find(id);
+            Product product = this.productRepository.Get(id.Value);
             if (product == null)
             {
                 return HttpNotFound();
@@ -89,8 +96,7 @@ namespace NorthwindMVC5.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.Entry(product).State = EntityState.Modified;
-                db.SaveChanges();
+                this.productRepository.Update(product);
                 return RedirectToAction("Index");
             }
             ViewBag.CategoryID = new SelectList(db.Categories, "CategoryID", "CategoryName", product.CategoryID);
@@ -105,7 +111,7 @@ namespace NorthwindMVC5.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Product product = db.Products.Find(id);
+            Product product = this.productRepository.Get(id.Value);
             if (product == null)
             {
                 return HttpNotFound();
@@ -118,9 +124,8 @@ namespace NorthwindMVC5.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
-            Product product = db.Products.Find(id);
-            db.Products.Remove(product);
-            db.SaveChanges();
+            Product product = this.productRepository.Get(id);
+            this.productRepository.Delete(product);
             return RedirectToAction("Index");
         }
 
